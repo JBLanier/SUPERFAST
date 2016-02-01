@@ -118,18 +118,13 @@ void ASUPERFASTCharacter::UpdateAnimation()
 
 	// Are we moving or standing still?
 	UPaperFlipbook* DesiredAnimation;
-	if (GetCharacterMovement()->IsFalling() == true) {
-		DesiredAnimation = (PlayerVelocity.Z < 0) ? FollowThroughJumpAnimation : BeginJumpAnimation;
-	}
-	else if (isMovingLaterally && !GetCharacterMovement()->IsFalling())
-	{
-		DesiredAnimation = RunningAnimation;
-	}
-	else if (isSliding == true)
-	{
+	if (isSliding == true) {
 		DesiredAnimation = SlideAnimation;
-	}
-	else {
+	} else if (GetCharacterMovement()->IsFalling() == true) {
+		DesiredAnimation = (PlayerVelocity.Z < 0) ? FollowThroughJumpAnimation : BeginJumpAnimation;
+	} else if (isMovingLaterally && !GetCharacterMovement()->IsFalling()) {
+		DesiredAnimation = RunningAnimation;
+	} else {
 		DesiredAnimation = IdleAnimation;
 	}
 
@@ -196,7 +191,6 @@ void ASUPERFASTCharacter::Jump()
 	}
 	else {
 		UE_LOG(LogTemp, Warning, TEXT("not falling"));
-		mayDoubleJump = true;
 		APaperCharacter::Jump();
 	}
 }
@@ -214,16 +208,15 @@ void ASUPERFASTCharacter::startSliding()
 	isMovingLaterally = false;
 	isSliding = true;
 
-	GetCharacterMovement()->BrakingFrictionFactor = 0.10;
-	GetCharacterMovement()->bWantsToCrouch = true;
+	UCharacterMovementComponent *CM = GetCharacterMovement();
+	FVector velocity = CM->Velocity;
 
-	if (GetCharacterMovement()->Velocity.X <= 1000.0 && GetCharacterMovement()->Velocity.X > 0.0)
+	CM->BrakingFrictionFactor = 0.07;
+	CM->bWantsToCrouch = true;
+
+	if (!CM->IsFalling() && velocity.X <= 1000.0 && velocity.GetAbs().X > 0.0)
 	{
-		GetCharacterMovement()->Velocity.X = GetCharacterMovement()->MaxWalkSpeed-500;
-	}
-	else if (GetCharacterMovement()->Velocity.X >= -1000.0 && GetCharacterMovement()->Velocity.X < 0.0)
-	{
-		GetCharacterMovement()->Velocity.X = -(GetCharacterMovement()->MaxWalkSpeed-500);
+		velocity.X += velocity.X/velocity.X * 1000.0;
 	}
 }
 
@@ -281,12 +274,15 @@ void ASUPERFASTCharacter::UpdateCharacter()
 			Controller->SetControlRotation(FRotator(0.0f, 0.0f, 0.0f));
 		}
 	}
-
-	UE_LOG(LogTemp, Warning, TEXT("Character half height from character movement is %f"), GetCharacterMovement()->CrouchedHalfHeight);
-	UE_LOG(LogTemp, Warning, TEXT("Character half height from capsule is %f"), GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
 }
 
 void ASUPERFASTCharacter::OnHit(AActor* SelfActor, AActor* OtherActor, FVector NormalImpulse, const FHitResult& Hit) {
 
-	UE_LOG(LogTemp, Warning, TEXT("COLLISION"));
+	UE_LOG(LogTemp, Warning, TEXT("COLLISION x: %f  y: %f"), Hit.Normal.X, Hit.Normal.Z );
+	float NormalZ = Hit.Normal.Z;
+	float NormalX = Hit.Normal.X;
+
+	if (NormalZ > 0.01) {
+		mayDoubleJump = true;
+	}
 }
