@@ -76,8 +76,10 @@ protected:
 	void stopGrappling();
 
 	void useItem();
-
 	void UpdateCharacter();
+	
+	UFUNCTION(/*custom parameters*/)
+		void OnHit(AActor* SelfActor, AActor* OtherActor, FVector NormalImpulse, const FHitResult& Hit);
 
 	/** Handle touch inputs. */
 	void TouchStarted(const ETouchIndex::Type FingerIndex, const FVector Location);

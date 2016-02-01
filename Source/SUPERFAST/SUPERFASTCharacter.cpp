@@ -99,6 +99,9 @@ ASUPERFASTCharacter::ASUPERFASTCharacter()
 	isSliding = false;
 	isMovingLaterally = false;
 	mayDoubleJump = true;
+
+	this->OnActorHit.AddDynamic(this, &ASUPERFASTCharacter::OnHit);
+	
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -257,4 +260,9 @@ void ASUPERFASTCharacter::UpdateCharacter()
 			Controller->SetControlRotation(FRotator(0.0f, 0.0f, 0.0f));
 		}
 	}
+}
+
+void ASUPERFASTCharacter::OnHit(AActor* SelfActor, AActor* OtherActor, FVector NormalImpulse, const FHitResult& Hit) {
+
+	UE_LOG(LogTemp, Warning, TEXT("COLLISION"));
 }
