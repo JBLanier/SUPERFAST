@@ -64,10 +64,10 @@ protected:
 	/** Called for side to side input */
 	void MoveRight(float Value);
 
-	/*
-	//virtual void Jump() override;
+	
+	virtual void Jump() override;
 	void doubleJump();
-	*/
+	
 
 	void startSliding();
 	void stopSliding();

@@ -170,31 +170,32 @@ void ASUPERFASTCharacter::MoveRight(float Value)
 
 	}
 }
-/*
+
 void ASUPERFASTCharacter::Jump()
 {
-UE_LOG(LogTemp, Warning, TEXT("jump called"));
-if (GetCharacterMovement()->IsFalling()) {
-UE_LOG(LogTemp, Warning, TEXT("falling"));
-if (mayDoubleJump == true) {
-UE_LOG(LogTemp, Warning, TEXT("may double jump was true"));
+	UE_LOG(LogTemp, Warning, TEXT("jump called"));
+	if (GetCharacterMovement()->IsFalling()) {
+		UE_LOG(LogTemp, Warning, TEXT("falling"));
+		if (mayDoubleJump == true) {
+			UE_LOG(LogTemp, Warning, TEXT("may double jump was true"));
 
-APaperCharacter::Jump();
-mayDoubleJump = false;
-}
-}
-else {
-UE_LOG(LogTemp, Warning, TEXT("not falling"));
-mayDoubleJump = true;
-APaperCharacter::Jump();
-}
+			doubleJump();
+			mayDoubleJump = false;
+		}
+	}
+	else {
+		UE_LOG(LogTemp, Warning, TEXT("not falling"));
+		mayDoubleJump = true;
+		APaperCharacter::Jump();
+	}
 }
 
 void ASUPERFASTCharacter::doubleJump()
 {
-
+	GetCharacterMovement()->Velocity.Z = GetCharacterMovement()->JumpZVelocity;
+	
 }
-*/
+
 
 void ASUPERFASTCharacter::startSliding()
 {
