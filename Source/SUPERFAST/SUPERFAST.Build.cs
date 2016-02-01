@@ -2,9 +2,9 @@
 
 using UnrealBuildTool;
 
-public class MyProject6 : ModuleRules
+public class SUPERFAST : ModuleRules
 {
-	public MyProject6(TargetInfo Target)
+	public SUPERFAST(TargetInfo Target)
 	{
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "Paper2D" });
 	}

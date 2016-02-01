@@ -3,9 +3,9 @@
 #pragma once
 
 #include "PaperCharacter.h"
-#include "MyProject6Character.generated.h"
+#include "SUPERFASTCharacter.generated.h"
 
-// This class is the default character for MyProject6, and it is responsible for all
+// This class is the default character for SUPERFAST, and it is responsible for all
 // physical interaction between the player and the world.
 //
 //   The capsule component (inherited from ACharacter) handles collision with the world
@@ -14,13 +14,13 @@
 
 class UTextRenderComponent;
 
-UCLASS(config=Game)
-class AMyProject6Character : public APaperCharacter
+UCLASS(config = Game)
+class ASUPERFASTCharacter : public APaperCharacter
 {
 	GENERATED_BODY()
 
-	/** Side view camera */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera, meta=(AllowPrivateAccess="true"))
+		/** Side view camera */
+		UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* SideViewCameraComponent;
 
 	/** Camera boom positioning the camera beside the character */
@@ -31,7 +31,7 @@ class AMyProject6Character : public APaperCharacter
 	virtual void Tick(float DeltaSeconds) override;
 protected:
 	// The animation to play while running around
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Animations)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animations)
 	class UPaperFlipbook* RunningAnimation;
 
 	// The animation to play while idle (standing still)
@@ -47,16 +47,16 @@ protected:
 	class UPaperFlipbook* FollowThroughJumpAnimation;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Controls)
-	bool acceptsMoveRightCommands;
+		bool acceptsMoveRightCommands;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
-	bool isSliding;
+		bool isSliding;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
-	bool isMovingLaterally;
+		bool isMovingLaterally;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
-	bool mayDoubleJump;
+		bool mayDoubleJump;
 
 	/** Called to choose the correct animation to play based on the character's movement state */
 	void UpdateAnimation();
@@ -90,7 +90,7 @@ protected:
 	// End of APawn interface
 
 public:
-	AMyProject6Character();
+	ASUPERFASTCharacter();
 
 	/** Returns SideViewCameraComponent subobject **/
 	FORCEINLINE class UCameraComponent* GetSideViewCameraComponent() const { return SideViewCameraComponent; }

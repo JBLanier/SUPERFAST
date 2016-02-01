@@ -2,17 +2,17 @@
 
 #pragma once
 #include "GameFramework/GameMode.h"
-#include "MyProject6GameMode.generated.h"
+#include "SUPERFASTGameMode.generated.h"
 
 // The GameMode defines the game being played. It governs the game rules, scoring, what actors
 // are allowed to exist in this game type, and who may enter the game.
 //
-// This game mode just sets the default pawn to be the MyCharacter asset, which is a subclass of MyProject6Character
+// This game mode just sets the default pawn to be the MyCharacter asset, which is a subclass of SUPERFASTCharacter
 
 UCLASS(minimalapi)
-class AMyProject6GameMode : public AGameMode
+class ASUPERFASTGameMode : public AGameMode
 {
 	GENERATED_BODY()
 public:
-	AMyProject6GameMode();
+	ASUPERFASTGameMode();
 };

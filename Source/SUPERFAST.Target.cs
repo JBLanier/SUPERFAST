@@ -3,11 +3,11 @@
 using UnrealBuildTool;
 using System.Collections.Generic;
 
-public class MyProject6EditorTarget : TargetRules
+public class SUPERFASTTarget : TargetRules
 {
-	public MyProject6EditorTarget(TargetInfo Target)
+	public SUPERFASTTarget(TargetInfo Target)
 	{
-		Type = TargetType.Editor;
+		Type = TargetType.Game;
 	}
 
 	//
@@ -20,6 +20,6 @@ public class MyProject6EditorTarget : TargetRules
 		ref List<string> OutExtraModuleNames
 		)
 	{
-		OutExtraModuleNames.Add("MyProject6");
+		OutExtraModuleNames.Add("SUPERFAST");
 	}
 }
