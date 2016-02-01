@@ -46,6 +46,10 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animations)
 	class UPaperFlipbook* FollowThroughJumpAnimation;
 
+	//The animation to play while performing a slide
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
+	class UPaperFlipbook* SlideAnimation;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Controls)
 		bool acceptsMoveRightCommands;
 

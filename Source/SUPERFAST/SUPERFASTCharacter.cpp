@@ -20,11 +20,13 @@ ASUPERFASTCharacter::ASUPERFASTCharacter()
 		ConstructorHelpers::FObjectFinderOptional<UPaperFlipbook> IdleAnimationAsset;
 		ConstructorHelpers::FObjectFinderOptional<UPaperFlipbook> BeginJumpAnimationAsset;
 		ConstructorHelpers::FObjectFinderOptional<UPaperFlipbook> FollowThroughJumpAnimationAsset;
+		ConstructorHelpers::FObjectFinderOptional<UPaperFlipbook> SlideAnimationAsset;
 		FConstructorStatics()
 			: RunningAnimationAsset(TEXT("/Game/SuperFastSprites/Run_FlipBook"))
 			, IdleAnimationAsset(TEXT("/Game/SuperFastSprites/Ready_FlipBook"))
 			, BeginJumpAnimationAsset(TEXT("/Game/SuperFastSprites/Jump_1_FlipBook"))
 			, FollowThroughJumpAnimationAsset(TEXT("/Game/SuperFastSprites/Jump_2_Flipbook"))
+			, SlideAnimationAsset(TEXT("/Game/SuperFastSprites/Slide_FlipBook"))
 		{
 		}
 	};
@@ -34,6 +36,7 @@ ASUPERFASTCharacter::ASUPERFASTCharacter()
 	IdleAnimation = ConstructorStatics.IdleAnimationAsset.Get();
 	BeginJumpAnimation = ConstructorStatics.BeginJumpAnimationAsset.Get();
 	FollowThroughJumpAnimation = ConstructorStatics.FollowThroughJumpAnimationAsset.Get();
+	SlideAnimation = ConstructorStatics.SlideAnimationAsset.Get();
 
 	GetSprite()->SetFlipbook(IdleAnimation);
 
@@ -43,7 +46,7 @@ ASUPERFASTCharacter::ASUPERFASTCharacter()
 	bUseControllerRotationRoll = false;
 
 	// Set the size of our collision capsule.
-	GetCapsuleComponent()->SetCapsuleHalfHeight(96.0f);
+	GetCapsuleComponent()->SetCapsuleHalfHeight(74.0f);
 	GetCapsuleComponent()->SetCapsuleRadius(40.0f);
 
 	// Create a camera boom attached to the root (capsule)
@@ -101,6 +104,7 @@ ASUPERFASTCharacter::ASUPERFASTCharacter()
 	mayDoubleJump = true;
 
 	this->OnActorHit.AddDynamic(this, &ASUPERFASTCharacter::OnHit);
+
 	
 }
 
@@ -120,6 +124,10 @@ void ASUPERFASTCharacter::UpdateAnimation()
 	else if (isMovingLaterally && !GetCharacterMovement()->IsFalling())
 	{
 		DesiredAnimation = RunningAnimation;
+	}
+	else if (isSliding == true)
+	{
+		DesiredAnimation = SlideAnimation;
 	}
 	else {
 		DesiredAnimation = IdleAnimation;
@@ -205,14 +213,27 @@ void ASUPERFASTCharacter::startSliding()
 	acceptsMoveRightCommands = false;
 	isMovingLaterally = false;
 	isSliding = true;
-	// todo: implement slide animation and hit box change
+
+	GetCharacterMovement()->BrakingFrictionFactor = 0.10;
+	GetCharacterMovement()->bWantsToCrouch = true;
+
+	if (GetCharacterMovement()->Velocity.X <= 1000.0 && GetCharacterMovement()->Velocity.X > 0.0)
+	{
+		GetCharacterMovement()->Velocity.X = GetCharacterMovement()->MaxWalkSpeed-500;
+	}
+	else if (GetCharacterMovement()->Velocity.X >= -1000.0 && GetCharacterMovement()->Velocity.X < 0.0)
+	{
+		GetCharacterMovement()->Velocity.X = -(GetCharacterMovement()->MaxWalkSpeed-500);
+	}
 }
 
 void ASUPERFASTCharacter::stopSliding()
 {
 	acceptsMoveRightCommands = true;
-	isSliding = true;
-	// todo: implement slide animation exit and hit box change
+	isSliding = false;
+	
+	GetCharacterMovement()->BrakingFrictionFactor = 2.0;
+	GetCharacterMovement()->bWantsToCrouch = false;
 }
 
 void ASUPERFASTCharacter::startGrappling()
@@ -260,6 +281,9 @@ void ASUPERFASTCharacter::UpdateCharacter()
 			Controller->SetControlRotation(FRotator(0.0f, 0.0f, 0.0f));
 		}
 	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Character half height from character movement is %f"), GetCharacterMovement()->CrouchedHalfHeight);
+	UE_LOG(LogTemp, Warning, TEXT("Character half height from capsule is %f"), GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
 }
 
 void ASUPERFASTCharacter::OnHit(AActor* SelfActor, AActor* OtherActor, FVector NormalImpulse, const FHitResult& Hit) {
