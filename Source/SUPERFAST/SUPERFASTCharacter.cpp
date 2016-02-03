@@ -7,6 +7,7 @@
 
 
 
+
 DEFINE_LOG_CATEGORY_STATIC(SideScrollerCharacter, Log, All);
 //////////////////////////////////////////////////////////////////////////
 // ASUPERFASTCharacter
@@ -21,12 +22,15 @@ ASUPERFASTCharacter::ASUPERFASTCharacter()
 		ConstructorHelpers::FObjectFinderOptional<UPaperFlipbook> BeginJumpAnimationAsset;
 		ConstructorHelpers::FObjectFinderOptional<UPaperFlipbook> FollowThroughJumpAnimationAsset;
 		ConstructorHelpers::FObjectFinderOptional<UPaperFlipbook> SlideAnimationAsset;
+		ConstructorHelpers::FObjectFinderOptional<UPaperFlipbook> WallSlideAnimationAsset;
 		FConstructorStatics()
 			: RunningAnimationAsset(TEXT("/Game/SuperFastSprites/Run_FlipBook"))
 			, IdleAnimationAsset(TEXT("/Game/SuperFastSprites/Ready_FlipBook"))
 			, BeginJumpAnimationAsset(TEXT("/Game/SuperFastSprites/Jump_1_FlipBook"))
 			, FollowThroughJumpAnimationAsset(TEXT("/Game/SuperFastSprites/Jump_2_Flipbook"))
 			, SlideAnimationAsset(TEXT("/Game/SuperFastSprites/Slide_FlipBook"))
+			, WallSlideAnimationAsset(TEXT("/Game/SuperFastSprites/WallSlide_FlipBook"))
+
 		{
 		}
 	};
@@ -37,6 +41,7 @@ ASUPERFASTCharacter::ASUPERFASTCharacter()
 	BeginJumpAnimation = ConstructorStatics.BeginJumpAnimationAsset.Get();
 	FollowThroughJumpAnimation = ConstructorStatics.FollowThroughJumpAnimationAsset.Get();
 	SlideAnimation = ConstructorStatics.SlideAnimationAsset.Get();
+	WallSlideAnimation = ConstructorStatics.WallSlideAnimationAsset.Get();
 
 	GetSprite()->SetFlipbook(IdleAnimation);
 
@@ -102,9 +107,13 @@ ASUPERFASTCharacter::ASUPERFASTCharacter()
 	isSliding = false;
 	isMovingLaterally = false;
 	mayDoubleJump = true;
+	isWallSliding = 0;
+	isInWallSlideVolume = false;
+
 
 	this->OnActorHit.AddDynamic(this, &ASUPERFASTCharacter::OnHit);
-
+	this->OnActorBeginOverlap.AddDynamic(this, &ASUPERFASTCharacter::OnBeginOverlap);
+	this->OnActorEndOverlap.AddDynamic(this, &ASUPERFASTCharacter::OnEndOverlap);
 	
 }
 
@@ -118,7 +127,9 @@ void ASUPERFASTCharacter::UpdateAnimation()
 
 	// Are we moving or standing still?
 	UPaperFlipbook* DesiredAnimation;
-	if (isSliding == true) {
+	if (isWallSliding != 0) {
+		DesiredAnimation = WallSlideAnimation;
+	} else if (isSliding == true) {
 		DesiredAnimation = SlideAnimation;
 	} else if (GetCharacterMovement()->IsFalling() == true) {
 		DesiredAnimation = (PlayerVelocity.Z < 0) ? FollowThroughJumpAnimation : BeginJumpAnimation;
@@ -137,7 +148,6 @@ void ASUPERFASTCharacter::UpdateAnimation()
 void ASUPERFASTCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-
 	UpdateCharacter();
 }
 
@@ -179,18 +189,20 @@ void ASUPERFASTCharacter::MoveRight(float Value)
 
 void ASUPERFASTCharacter::Jump()
 {
-	UE_LOG(LogTemp, Warning, TEXT("jump called"));
-	if (GetCharacterMovement()->IsFalling()) {
-		UE_LOG(LogTemp, Warning, TEXT("falling"));
+	if (isWallSliding != 0) {
+		int32 d = isWallSliding;
+		stopWallSliding();
+		jumpFromWallSlide(d);
+	} else if (GetCharacterMovement()->IsFalling()) {
+		//UE_LOG(LogTemp, Warning, TEXT("falling"));
 		if (mayDoubleJump == true) {
-			UE_LOG(LogTemp, Warning, TEXT("may double jump was true"));
+			//UE_LOG(LogTemp, Warning, TEXT("may double jump was true"));
 
 			doubleJump();
 			mayDoubleJump = false;
 		}
-	}
-	else {
-		UE_LOG(LogTemp, Warning, TEXT("not falling"));
+	} else {
+		//UE_LOG(LogTemp, Warning, TEXT("not falling"));
 		APaperCharacter::Jump();
 	}
 }
@@ -199,6 +211,18 @@ void ASUPERFASTCharacter::doubleJump()
 {
 	GetCharacterMovement()->Velocity.Z = GetCharacterMovement()->JumpZVelocity;
 	
+}
+
+void ASUPERFASTCharacter::jumpFromWallSlide(int32 direction)
+{
+	GetCharacterMovement()->Velocity.Z = GetCharacterMovement()->JumpZVelocity;
+	if (direction == 1) {
+		GetCharacterMovement()->Velocity.X = GetCharacterMovement()->JumpZVelocity * -0.7;
+	}
+	else {
+		GetCharacterMovement()->Velocity.X = GetCharacterMovement()->JumpZVelocity * 0.7;
+	}
+
 }
 
 
@@ -216,7 +240,7 @@ void ASUPERFASTCharacter::startSliding()
 
 	if (!CM->IsFalling() && velocity.X <= 1000.0 && velocity.GetAbs().X > 0.0)
 	{
-		velocity.X += velocity.X/velocity.X * 1000.0;
+		velocity.X += (velocity.Z > 0) ? 1 : ((velocity.Z < 0) ? -1 : 0) * 1000.0;
 	}
 }
 
@@ -227,6 +251,26 @@ void ASUPERFASTCharacter::stopSliding()
 	
 	GetCharacterMovement()->BrakingFrictionFactor = 2.0;
 	GetCharacterMovement()->bWantsToCrouch = false;
+}
+
+void ASUPERFASTCharacter::startWallSliding(int32 direction)
+{
+	if (direction == 1 || direction == 2) {
+		UE_LOG(LogTemp, Warning, TEXT("WALLSLIDE!"));
+
+		GetCharacterMovement()->GravityScale = 2;
+		acceptsMoveRightCommands = false;
+		isWallSliding = direction;
+	}
+}
+
+void ASUPERFASTCharacter::stopWallSliding()
+{
+	UE_LOG(LogTemp, Warning, TEXT("ENDED"));
+	//Editor Value should match this
+	GetCharacterMovement()->GravityScale = 5;
+	acceptsMoveRightCommands = true;
+	isWallSliding = 0;
 }
 
 void ASUPERFASTCharacter::startGrappling()
@@ -243,6 +287,8 @@ void ASUPERFASTCharacter::useItem()
 
 }
 
+
+
 void ASUPERFASTCharacter::TouchStarted(const ETouchIndex::Type FingerIndex, const FVector Location)
 {
 	// jump on any touch
@@ -256,10 +302,13 @@ void ASUPERFASTCharacter::TouchStopped(const ETouchIndex::Type FingerIndex, cons
 
 void ASUPERFASTCharacter::UpdateCharacter()
 {
+	if (!isInWallSlideVolume && isWallSliding) {
+		stopWallSliding();
+	}
 	// Update animation to match the motion
 	UpdateAnimation();
 
-	// Now setup the rotation of the controller based on the direction we are travelling
+	// Now setup the rotation of the controller based on the direction we are traveling
 	const FVector PlayerVelocity = GetVelocity();
 	float TravelDirection = PlayerVelocity.X;
 	// Set the rotation so that the character faces his direction of travel.
@@ -278,11 +327,61 @@ void ASUPERFASTCharacter::UpdateCharacter()
 
 void ASUPERFASTCharacter::OnHit(AActor* SelfActor, AActor* OtherActor, FVector NormalImpulse, const FHitResult& Hit) {
 
-	UE_LOG(LogTemp, Warning, TEXT("COLLISION x: %f  y: %f"), Hit.Normal.X, Hit.Normal.Z );
+	
+	UE_LOG(LogTemp, Warning, TEXT("COLLISION x: %f  y: %f"), Hit.Normal.X, Hit.Normal.Z);
+	//UE_LOG(LogTemp, Warning, TEXT("X Velocity: %f"), GetCapsuleComponent()->ComponentVelocity.X);
+	//UE_LOG(LogTemp, Warning, TEXT("Y Velocity: %f"), GetCapsuleComponent()->ComponentVelocity.Z);
+	
+
 	float NormalZ = Hit.Normal.Z;
 	float NormalX = Hit.Normal.X;
 
+	float xVelocity = GetCapsuleComponent()->ComponentVelocity.X;
+	float zVelocity = GetCapsuleComponent()->ComponentVelocity.Z;
+
+	// Landed on flat ground
 	if (NormalZ > 0.01) {
+		stopWallSliding();
 		mayDoubleJump = true;
 	}
+	// Landed on 45 degree slope
+	if (Hit.Normal.GetAbs().Z - 0.707 < 0.01 && Hit.Normal.GetAbs().Z - 0.707 > -0.01) {
+		stopWallSliding();
+		if (!isSliding) {
+			GetCharacterMovement()->Velocity.X += (NormalX > 0 ? -1 : 1) * FVector::DotProduct(Hit.Normal, GetCapsuleComponent()->ComponentVelocity) * 0.2;
+			
+		}
+	}
+
+	// Hit Vertical Wall
+	else if (NormalZ < 0.001 && NormalZ > -0.001 && isInWallSlideVolume && GetCharacterMovement()->IsFalling()) {
+		if (isWallSliding == 0) {
+			GetCharacterMovement()->Velocity.Z += FMath::Sqrt(-FVector::DotProduct(Hit.Normal, GetCapsuleComponent()->ComponentVelocity))*1.5;
+			int32 WallDirection;
+			if (NormalX < 0) {
+				WallDirection = 1;
+			}
+			else {
+				WallDirection = 2;
+			}
+			startWallSliding(WallDirection);
+		}
+	}
+
+
+}
+
+
+void ASUPERFASTCharacter::OnBeginOverlap(AActor* OtherActor)
+{
+	UE_LOG(LogTemp, Warning, TEXT("BEGIN OVERLAP"));
+	if (OtherActor != this) {
+		isInWallSlideVolume = true;
+	}
+}
+
+void ASUPERFASTCharacter::OnEndOverlap(AActor* OtherActor)
+{
+	UE_LOG(LogTemp, Warning, TEXT("End OVERLAP"));
+	isInWallSlideVolume = false;
 }

@@ -50,6 +50,10 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
 	class UPaperFlipbook* SlideAnimation;
 
+	//The animation to play while performing a wall-slide
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
+	class UPaperFlipbook* WallSlideAnimation;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Controls)
 		bool acceptsMoveRightCommands;
 
@@ -58,6 +62,13 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
 		bool isMovingLaterally;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
+		//0 = no, 1 = wall on right, 2 = wall on left
+		int32 isWallSliding;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
+		bool isInWallSlideVolume;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
 		bool mayDoubleJump;
@@ -71,19 +82,31 @@ protected:
 	
 	virtual void Jump() override;
 	void doubleJump();
+	void jumpFromWallSlide(int32 direction);
 	
 
 	void startSliding();
 	void stopSliding();
+
+	void startWallSliding(int32 direction);
+	void stopWallSliding();
+
 
 	void startGrappling();
 	void stopGrappling();
 
 	void useItem();
 	void UpdateCharacter();
+
 	
 	UFUNCTION(/*custom parameters*/)
 		void OnHit(AActor* SelfActor, AActor* OtherActor, FVector NormalImpulse, const FHitResult& Hit);
+
+	UFUNCTION(/*custom parameters*/)
+		void OnBeginOverlap(AActor* OtherActor);
+
+	UFUNCTION(/*custom parameters*/)
+		void OnEndOverlap(AActor* OtherActor);
 
 	/** Handle touch inputs. */
 	void TouchStarted(const ETouchIndex::Type FingerIndex, const FVector Location);
