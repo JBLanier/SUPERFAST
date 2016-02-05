@@ -17,6 +17,10 @@ ASUPERFASTCharacter::ASUPERFASTCharacter()
 	// Setup the assets
 	struct FConstructorStatics
 	{
+
+		//JB - If you need to reference a flipbook later in the code, follow the pattern established  here:
+		// (All animations apparently need to be flipbooks, you can't just use sprites for still animations.)
+
 		ConstructorHelpers::FObjectFinderOptional<UPaperFlipbook> RunningAnimationAsset;
 		ConstructorHelpers::FObjectFinderOptional<UPaperFlipbook> IdleAnimationAsset;
 		ConstructorHelpers::FObjectFinderOptional<UPaperFlipbook> BeginJumpAnimationAsset;
@@ -42,6 +46,8 @@ ASUPERFASTCharacter::ASUPERFASTCharacter()
 	FollowThroughJumpAnimation = ConstructorStatics.FollowThroughJumpAnimationAsset.Get();
 	SlideAnimation = ConstructorStatics.SlideAnimationAsset.Get();
 	WallSlideAnimation = ConstructorStatics.WallSlideAnimationAsset.Get();
+
+	//JB - this is the end of stuff you need to do create a flipbook reference
 
 	GetSprite()->SetFlipbook(IdleAnimation);
 
@@ -103,14 +109,25 @@ ASUPERFASTCharacter::ASUPERFASTCharacter()
 	GetSprite()->SetIsReplicated(true);
 	bReplicates = true;
 
+
+	//JB - everything below this point in the constructor is user created code:
 	acceptsMoveRightCommands = true;
 	isSliding = false;
 	isMovingLaterally = false;
 	mayDoubleJump = true;
-	isWallSliding = 0;
+
+	//0 = not wall sliding, 1 = yes, with wall on right of character, 2 = yes, with wall on left
+	wallSlidingState = 0;
+
+	//JB- TriggerVolumes in the level are currently used to define the space where the player should be able to wallSlide
+	// The main purpose of these volumes is the define where walls VERTICALLY stop being walls.
+	// For instance, when you slide off a wall and want to regain motion control, the fact that you just left the WallSlide volume allowed this.
+	// If we don't use volumes to call events when the player enters and leaves them, the player will continue sliding even when they slide off a wall.
 	isInWallSlideVolume = false;
 
-
+	//JB - Characters send a broadcast to subscribers when these collision type events happen,
+	// here I'm making the SUPERFASTCharacter subscribe to itself and define what functions it wants the broadcasts to call (OnHit, OnBeginOverlap, OnEndOverlap).
+	// A whole lot of player movement state stuff is handled in OnHit(), the "on***overlap" functions currently only set whether or not the player is in a volume where they are allowed to WallSlide
 	this->OnActorHit.AddDynamic(this, &ASUPERFASTCharacter::OnHit);
 	this->OnActorBeginOverlap.AddDynamic(this, &ASUPERFASTCharacter::OnBeginOverlap);
 	this->OnActorEndOverlap.AddDynamic(this, &ASUPERFASTCharacter::OnEndOverlap);
@@ -120,6 +137,8 @@ ASUPERFASTCharacter::ASUPERFASTCharacter()
 //////////////////////////////////////////////////////////////////////////
 // Animation
 
+
+//JB - direct animation changes should only happen here.
 void ASUPERFASTCharacter::UpdateAnimation()
 {
 	const FVector PlayerVelocity = GetVelocity();
@@ -127,7 +146,7 @@ void ASUPERFASTCharacter::UpdateAnimation()
 
 	// Are we moving or standing still?
 	UPaperFlipbook* DesiredAnimation;
-	if (isWallSliding != 0) {
+	if (wallSlidingState != 0) {
 		DesiredAnimation = WallSlideAnimation;
 	} else if (isSliding == true) {
 		DesiredAnimation = SlideAnimation;
@@ -145,6 +164,7 @@ void ASUPERFASTCharacter::UpdateAnimation()
 	}
 }
 
+//JB - this is called every single frame no matter what. If you can make something happen without calling it every frame, probably shouldn't edit this.
 void ASUPERFASTCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
@@ -176,6 +196,9 @@ void ASUPERFASTCharacter::MoveRight(float Value)
 	/*UpdateChar();*/
 
 	// Apply the input to the character motion
+
+	//JB- Some player need to lock controller driven lateral motion. acceptsMoveRightCommands allows this to be controlled.
+	// When acceptsMoveRightCommands is false, the player doesn't STOP moving necessarily, it just can't accelerate due to user input.
 	if (acceptsMoveRightCommands && Value != 0) {
 
 		isMovingLaterally = true;
@@ -183,14 +206,13 @@ void ASUPERFASTCharacter::MoveRight(float Value)
 	}
 	else {
 		isMovingLaterally = false;
-
 	}
 }
 
 void ASUPERFASTCharacter::Jump()
 {
-	if (isWallSliding != 0) {
-		int32 d = isWallSliding;
+	if (wallSlidingState != 0) {
+		int32 d = wallSlidingState;
 		stopWallSliding();
 		jumpFromWallSlide(d);
 	} else if (GetCharacterMovement()->IsFalling()) {
@@ -260,7 +282,7 @@ void ASUPERFASTCharacter::startWallSliding(int32 direction)
 
 		GetCharacterMovement()->GravityScale = 2;
 		acceptsMoveRightCommands = false;
-		isWallSliding = direction;
+		wallSlidingState = direction;
 	}
 }
 
@@ -270,9 +292,12 @@ void ASUPERFASTCharacter::stopWallSliding()
 	//Editor Value should match this
 	GetCharacterMovement()->GravityScale = 5;
 	acceptsMoveRightCommands = true;
-	isWallSliding = 0;
+	wallSlidingState = 0;
 }
 
+
+//JB- In theory, Stop*doingsomething*() functions should be able to called without adverse effects at anytime regardless of whether or not the player is actually *doingthething*
+// That way functions can have logic like "I dunno if he's grappling right now, but he definitely shouldn't be currently, lets call stopGrappling and the player will stop if he is."
 void ASUPERFASTCharacter::startGrappling()
 {
 }
@@ -300,11 +325,11 @@ void ASUPERFASTCharacter::TouchStopped(const ETouchIndex::Type FingerIndex, cons
 	StopJumping();
 }
 
+//JB - this is called every single frame no matter what. If you can make something happen without calling it every frame, probably shouldn't edit this.
+// So far nothing has had to have been added.
+// animation changes are to be handled in UpdateAnimation()
 void ASUPERFASTCharacter::UpdateCharacter()
 {
-	if (!isInWallSlideVolume && isWallSliding) {
-		stopWallSliding();
-	}
 	// Update animation to match the motion
 	UpdateAnimation();
 
@@ -336,6 +361,7 @@ void ASUPERFASTCharacter::OnHit(AActor* SelfActor, AActor* OtherActor, FVector N
 	float NormalZ = Hit.Normal.Z;
 	float NormalX = Hit.Normal.X;
 
+	//JB - getting the players Capsule component's velocity because the player's velocity reads 0 for some reason when OnHit is called.
 	float xVelocity = GetCapsuleComponent()->ComponentVelocity.X;
 	float zVelocity = GetCapsuleComponent()->ComponentVelocity.Z;
 
@@ -348,14 +374,23 @@ void ASUPERFASTCharacter::OnHit(AActor* SelfActor, AActor* OtherActor, FVector N
 	if (Hit.Normal.GetAbs().Z - 0.707 < 0.01 && Hit.Normal.GetAbs().Z - 0.707 > -0.01) {
 		stopWallSliding();
 		if (!isSliding) {
-			GetCharacterMovement()->Velocity.X += (NormalX > 0 ? -1 : 1) * FVector::DotProduct(Hit.Normal, GetCapsuleComponent()->ComponentVelocity) * 0.2;
-			
+
+			//JB - this is the snippet that transfers falling velocity to lateral motion on slopes. 
+			// Marcel (genius) figured out how to tell when the player wants to transfer his momentum based on his current velocity.
+			// This may or may not be the way we want to permanently implement it. It work is most all cases except using slopes to change direction in hairpin turns.
+			// Check out going down the stuff to the left of player start to see what I mean.
+			if (NormalX * GetCapsuleComponent()->ComponentVelocity.X >= 0) {
+				GetCharacterMovement()->Velocity.X += (NormalX > 0 ? -1 : 1) * FVector::DotProduct(Hit.Normal, GetCapsuleComponent()->ComponentVelocity);
+			}
+			else {
+				GetCharacterMovement()->Velocity.X += (NormalX > 0 ? -1 : 1) * FVector::DotProduct(Hit.Normal, GetCapsuleComponent()->ComponentVelocity)*0.4;
+			}
 		}
 	}
 
 	// Hit Vertical Wall
 	else if (NormalZ < 0.001 && NormalZ > -0.001 && isInWallSlideVolume && GetCharacterMovement()->IsFalling()) {
-		if (isWallSliding == 0) {
+		if (wallSlidingState == 0) {
 			GetCharacterMovement()->Velocity.Z += FMath::Sqrt(-FVector::DotProduct(Hit.Normal, GetCapsuleComponent()->ComponentVelocity))*1.5;
 			int32 WallDirection;
 			if (NormalX < 0) {
@@ -384,4 +419,5 @@ void ASUPERFASTCharacter::OnEndOverlap(AActor* OtherActor)
 {
 	UE_LOG(LogTemp, Warning, TEXT("End OVERLAP"));
 	isInWallSlideVolume = false;
+	stopWallSliding();
 }

@@ -64,8 +64,8 @@ protected:
 		bool isMovingLaterally;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
-		//0 = no, 1 = wall on right, 2 = wall on left
-		int32 isWallSliding;
+		//0 = not wall sliding, 1 = yes, with wall on right of character, 2 = yes, with wall on left
+		int32 wallSlidingState;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
 		bool isInWallSlideVolume;
