@@ -3,16 +3,15 @@
 #include "SUPERFAST.h"
 #include "SUPERFASTCharacter.h"
 #include "PaperFlipbookComponent.h"
+#include "SFCharacterMovementComponent.h"
 #include "Components/TextRenderComponent.h"
-
-
 
 
 DEFINE_LOG_CATEGORY_STATIC(SideScrollerCharacter, Log, All);
 //////////////////////////////////////////////////////////////////////////
 // ASUPERFASTCharacter
 
-ASUPERFASTCharacter::ASUPERFASTCharacter()
+ASUPERFASTCharacter::ASUPERFASTCharacter(const class FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer.SetDefaultSubobjectClass<USFCharacterMovementComponent>(APaperCharacter::CharacterMovementComponentName))
 {
 	// Setup the assets
 	struct FConstructorStatics
@@ -50,6 +49,7 @@ ASUPERFASTCharacter::ASUPERFASTCharacter()
 	//JB - this is the end of stuff you need to do create a flipbook reference
 
 	GetSprite()->SetFlipbook(IdleAnimation);
+	GetSprite()->SetRelativeLocation(FVector(0,0,-77));
 
 	// Use only Yaw from the controller and ignore the rest of the rotation.
 	bUseControllerRotationPitch = false;
@@ -59,12 +59,14 @@ ASUPERFASTCharacter::ASUPERFASTCharacter()
 	// Set the size of our collision capsule.
 	GetCapsuleComponent()->SetCapsuleHalfHeight(74.0f);
 	GetCapsuleComponent()->SetCapsuleRadius(40.0f);
+	
 
 	// Create a camera boom attached to the root (capsule)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->AttachTo(RootComponent);
 	CameraBoom->TargetArmLength = 500.0f;
 	CameraBoom->SocketOffset = FVector(0.0f, 0.0f, 75.0f);
+	CameraBoom->bEnableCameraLag = true;
 	CameraBoom->bAbsoluteRotation = true;
 	CameraBoom->bDoCollisionTest = false;
 	CameraBoom->RelativeRotation = FRotator(0.0f, -90.0f, 0.0f);
@@ -73,7 +75,8 @@ ASUPERFASTCharacter::ASUPERFASTCharacter()
 	// Create an orthographic camera (no perspective) and attach it to the boom
 	SideViewCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("SideViewCamera"));
 	SideViewCameraComponent->ProjectionMode = ECameraProjectionMode::Orthographic;
-	SideViewCameraComponent->OrthoWidth = 2048.0f;
+	SideViewCameraComponent->OrthoWidth = 5000.0f;
+	SideViewCameraComponent->bConstrainAspectRatio = true;
 	SideViewCameraComponent->AttachTo(CameraBoom, USpringArmComponent::SocketName);
 
 	// Prevent all automatic rotation behavior on the camera, character, and camera component
@@ -83,12 +86,23 @@ ASUPERFASTCharacter::ASUPERFASTCharacter()
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 
 	// Configure character movement
-	GetCharacterMovement()->GravityScale = 10.0f; //originally: 2.0f
+	GetCharacterMovement()->GravityScale = 5.0f; //originally: 2.0f
 	GetCharacterMovement()->AirControl = 0.80f; //originally 0.8 f
 	GetCharacterMovement()->JumpZVelocity = 1500.f; //originally: 1000.0 f
-	GetCharacterMovement()->GroundFriction = 3.0f; //originally 3.0 f
-	GetCharacterMovement()->MaxWalkSpeed = 3000.0f; //originally 600 f
+	GetCharacterMovement()->GroundFriction = 2.0f; //originally 3.0 f
+	GetCharacterMovement()->MaxWalkSpeed = 3200.0f; //originally 600 f
 	GetCharacterMovement()->MaxFlySpeed = 600.0f; //originally: 600f
+	GetCharacterMovement()->MaxAcceleration = 1600;
+	GetCharacterMovement()->bCanWalkOffLedges = true;
+	GetCharacterMovement()->bCanWalkOffLedgesWhenCrouching = true;
+	GetCharacterMovement()->bMaintainHorizontalGroundVelocity = false;
+	GetCharacterMovement()->JumpZVelocity = 2200.0f;
+	GetCharacterMovement()->BrakingDecelerationFalling = 700.0f;
+	GetCharacterMovement()->AirControl = 0.7f;
+	GetCharacterMovement()->AirControlBoostMultiplier = 0.0f;
+	GetCharacterMovement()->FallingLateralFriction = 0.75;
+	GetCharacterMovement()->GetNavAgentPropertiesRef().bCanCrouch = true;
+	GetCharacterMovement()->SetWalkableFloorAngle(70.0f);
 
 												  // Lock character motion onto the XZ plane, so the character can't move in or out of the screen
 	GetCharacterMovement()->bConstrainToPlane = true;
@@ -113,7 +127,6 @@ ASUPERFASTCharacter::ASUPERFASTCharacter()
 	//JB - everything below this point in the constructor is user created code:
 	acceptsMoveRightCommands = true;
 	isSliding = false;
-	isMovingLaterally = false;
 	mayDoubleJump = true;
 
 	//0 = not wall sliding, 1 = yes, with wall on right of character, 2 = yes, with wall on left
@@ -134,6 +147,14 @@ ASUPERFASTCharacter::ASUPERFASTCharacter()
 	
 }
 
+bool ASUPERFASTCharacter::CanJumpInternal_Implementation() const
+{
+	UE_LOG(LogTemp, Warning, TEXT("can jump called"));
+	const bool bCanHoldToJumpHigher = (GetJumpMaxHoldTime() > 0.0f) && IsJumpProvidingForce();
+
+	return !bIsCrouched && CharacterMovement && (CharacterMovement->IsMovingOnGround() || mayDoubleJump ||bCanHoldToJumpHigher) && CharacterMovement->IsJumpAllowed() && !CharacterMovement->bWantsToCrouch;
+}
+
 //////////////////////////////////////////////////////////////////////////
 // Animation
 
@@ -152,7 +173,8 @@ void ASUPERFASTCharacter::UpdateAnimation()
 		DesiredAnimation = SlideAnimation;
 	} else if (GetCharacterMovement()->IsFalling() == true) {
 		DesiredAnimation = (PlayerVelocity.Z < 0) ? FollowThroughJumpAnimation : BeginJumpAnimation;
-	} else if (isMovingLaterally && !GetCharacterMovement()->IsFalling()) {
+	}
+	else if (GetVelocity().X != 0 && GetCharacterMovement()->MovementMode == MOVE_Walking && GetCharacterMovement()->GetCurrentAcceleration().X != 0) {
 		DesiredAnimation = RunningAnimation;
 	} else {
 		DesiredAnimation = IdleAnimation;
@@ -200,17 +222,15 @@ void ASUPERFASTCharacter::MoveRight(float Value)
 	//JB- Some player need to lock controller driven lateral motion. acceptsMoveRightCommands allows this to be controlled.
 	// When acceptsMoveRightCommands is false, the player doesn't STOP moving necessarily, it just can't accelerate due to user input.
 	if (acceptsMoveRightCommands && Value != 0) {
-
-		isMovingLaterally = true;
 		AddMovementInput(FVector(1.0f, 0.0f, 0.0f), Value);
 	}
 	else {
-		isMovingLaterally = false;
 	}
 }
 
 void ASUPERFASTCharacter::Jump()
 {
+	/*
 	if (wallSlidingState != 0) {
 		int32 d = wallSlidingState;
 		stopWallSliding();
@@ -225,8 +245,9 @@ void ASUPERFASTCharacter::Jump()
 		}
 	} else {
 		//UE_LOG(LogTemp, Warning, TEXT("not falling"));
+	*/
 		APaperCharacter::Jump();
-	}
+	/*}*/
 }
 
 void ASUPERFASTCharacter::doubleJump()
@@ -251,7 +272,6 @@ void ASUPERFASTCharacter::jumpFromWallSlide(int32 direction)
 void ASUPERFASTCharacter::startSliding()
 {
 	acceptsMoveRightCommands = false;
-	isMovingLaterally = false;
 	isSliding = true;
 
 	UCharacterMovementComponent *CM = GetCharacterMovement();
@@ -278,7 +298,7 @@ void ASUPERFASTCharacter::stopSliding()
 void ASUPERFASTCharacter::startWallSliding(int32 direction)
 {
 	if (direction == 1 || direction == 2) {
-		UE_LOG(LogTemp, Warning, TEXT("WALLSLIDE!"));
+		UE_LOG(LogTemp, Log, TEXT("WALLSLIDE!"));
 
 		GetCharacterMovement()->GravityScale = 2;
 		acceptsMoveRightCommands = false;
@@ -288,7 +308,7 @@ void ASUPERFASTCharacter::startWallSliding(int32 direction)
 
 void ASUPERFASTCharacter::stopWallSliding()
 {
-	UE_LOG(LogTemp, Warning, TEXT("ENDED"));
+	UE_LOG(LogTemp, Log, TEXT("WallSlide ENDED"));
 	//Editor Value should match this
 	GetCharacterMovement()->GravityScale = 5;
 	acceptsMoveRightCommands = true;
@@ -350,10 +370,27 @@ void ASUPERFASTCharacter::UpdateCharacter()
 	}
 }
 
+void ASUPERFASTCharacter::CheckJumpInput(float DeltaTime)
+{
+	const bool bWasJumping = bPressedJump && JumpKeyHoldTime > 0.0f;
+	if (bPressedJump)
+	{
+		// Increment our timer first so calls to IsJumpProvidingForce() will return true
+		JumpKeyHoldTime += DeltaTime;
+		const bool bDidJump = CanJump() && CharacterMovement && CharacterMovement->DoJump(bClientUpdating);
+		UE_LOG(LogTemp, Warning, TEXT("1"));
+		if ((!bWasJumping) && bDidJump)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("2"));
+			OnJumped();
+		}
+	}
+}
+
 void ASUPERFASTCharacter::OnHit(AActor* SelfActor, AActor* OtherActor, FVector NormalImpulse, const FHitResult& Hit) {
 
 	
-	UE_LOG(LogTemp, Warning, TEXT("COLLISION x: %f  y: %f"), Hit.Normal.X, Hit.Normal.Z);
+	UE_LOG(LogTemp, Log, TEXT("COLLISION x: %f  y: %f"), Hit.Normal.X, Hit.Normal.Z);
 	//UE_LOG(LogTemp, Warning, TEXT("X Velocity: %f"), GetCapsuleComponent()->ComponentVelocity.X);
 	//UE_LOG(LogTemp, Warning, TEXT("Y Velocity: %f"), GetCapsuleComponent()->ComponentVelocity.Z);
 	

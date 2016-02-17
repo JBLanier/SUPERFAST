@@ -61,9 +61,6 @@ protected:
 		bool isSliding;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
-		bool isMovingLaterally;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
 		//0 = not wall sliding, 1 = yes, with wall on right of character, 2 = yes, with wall on left
 		int32 wallSlidingState;
 
@@ -72,6 +69,7 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
 		bool mayDoubleJump;
+
 
 	/** Called to choose the correct animation to play based on the character's movement state */
 	void UpdateAnimation();
@@ -91,11 +89,14 @@ protected:
 	void startWallSliding(int32 direction);
 	void stopWallSliding();
 
-
+	//Not Implemented Yet ///////
 	void startGrappling();
 	void stopGrappling();
 
 	void useItem();
+	////////////////
+
+
 	void UpdateCharacter();
 
 	
@@ -119,10 +120,14 @@ protected:
 	// End of APawn interface
 
 public:
-	ASUPERFASTCharacter();
-
+	ASUPERFASTCharacter(const class FObjectInitializer& ObjectInitializer);
 	/** Returns SideViewCameraComponent subobject **/
 	FORCEINLINE class UCameraComponent* GetSideViewCameraComponent() const { return SideViewCameraComponent; }
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
+
+	virtual bool CanJumpInternal_Implementation() const override;
+
+	/** Trigger jump if jump button has been pressed. */
+	virtual void CheckJumpInput(float DeltaTime);
 };
