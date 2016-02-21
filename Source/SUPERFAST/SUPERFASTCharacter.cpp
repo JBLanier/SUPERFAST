@@ -150,7 +150,7 @@ bool ASUPERFASTCharacter::CanJumpInternal_Implementation() const
 	UE_LOG(LogTemp, Warning, TEXT("can jump called"));
 	const bool bCanHoldToJumpHigher = (GetJumpMaxHoldTime() > 0.0f) && IsJumpProvidingForce();
 
-	return !bIsCrouched && CharacterMovement && (CharacterMovement->IsMovingOnGround() || mayDoubleJump || wallSlideBit != 0 || bCanHoldToJumpHigher) && CharacterMovement->IsJumpAllowed() && !CharacterMovement->bWantsToCrouch;
+	return !bIsCrouched && GetCharacterMovement() && (CharacterMovement->IsMovingOnGround() || mayDoubleJump || wallSlideBit != 0 || bCanHoldToJumpHigher) && GetCharacterMovement()->IsJumpAllowed() && !CharacterMovement->bWantsToCrouch;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -329,7 +329,7 @@ void ASUPERFASTCharacter::CheckJumpInput(float DeltaTime)
 	{
 		// Increment our timer first so calls to IsJumpProvidingForce() will return true
 		JumpKeyHoldTime += DeltaTime;
-		const bool bDidJump = CanJump() && CharacterMovement && CharacterMovement->DoJump(bClientUpdating);
+		const bool bDidJump = CanJump() &&GetCharacterMovement() &&GetCharacterMovement()->DoJump(bClientUpdating);
 		UE_LOG(LogTemp, Warning, TEXT("1"));
 		if ((!bWasJumping) && bDidJump)
 		{

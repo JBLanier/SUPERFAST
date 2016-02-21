@@ -19,10 +19,6 @@ public:
 		GrappleSwinging,
 	};
 
-	void USFCharacterMovementComponent::InitializeComponent() override;
-
-	void USFCharacterMovementComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) override;
-
 	/**
 	* Perform jump. Called by Character when a jump has been detected because Character->bPressedJump was true. Checks CanJump().
 	* Note that you should usually trigger a jump through Character::Jump() instead.
