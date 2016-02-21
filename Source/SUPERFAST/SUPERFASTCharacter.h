@@ -54,22 +54,11 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
 	class UPaperFlipbook* WallSlideAnimation;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Controls)
-		bool acceptsMoveRightCommands;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
-		bool isSliding;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
-		//0 = not wall sliding, 1 = yes, with wall on right of character, 2 = yes, with wall on left
-		int32 wallSlidingState;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
 		bool isInWallSlideVolume;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
 		bool mayDoubleJump;
-
 
 	/** Called to choose the correct animation to play based on the character's movement state */
 	void UpdateAnimation();
@@ -77,11 +66,7 @@ protected:
 	/** Called for side to side input */
 	void MoveRight(float Value);
 
-	
 	virtual void Jump() override;
-	void doubleJump();
-	void jumpFromWallSlide(int32 direction);
-	
 
 	void startSliding();
 	void stopSliding();
@@ -96,7 +81,6 @@ protected:
 	void useItem();
 	////////////////
 
-
 	void UpdateCharacter();
 
 	
@@ -109,6 +93,8 @@ protected:
 	UFUNCTION(/*custom parameters*/)
 		void OnEndOverlap(AActor* OtherActor);
 
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	/** Handle touch inputs. */
 	void TouchStarted(const ETouchIndex::Type FingerIndex, const FVector Location);
 
@@ -120,6 +106,10 @@ protected:
 	// End of APawn interface
 
 public:
+	UPROPERTY(Replicated)
+		// 0: not wallsliding 1: wall on left 2: wall on right
+		int8 wallSlideBit;
+
 	ASUPERFASTCharacter(const class FObjectInitializer& ObjectInitializer);
 	/** Returns SideViewCameraComponent subobject **/
 	FORCEINLINE class UCameraComponent* GetSideViewCameraComponent() const { return SideViewCameraComponent; }
@@ -129,5 +119,5 @@ public:
 	virtual bool CanJumpInternal_Implementation() const override;
 
 	/** Trigger jump if jump button has been pressed. */
-	virtual void CheckJumpInput(float DeltaTime);
+	//virtual void CheckJumpInput(float DeltaTime);
 };

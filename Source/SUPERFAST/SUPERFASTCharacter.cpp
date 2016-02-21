@@ -4,6 +4,7 @@
 #include "SUPERFASTCharacter.h"
 #include "PaperFlipbookComponent.h"
 #include "SFCharacterMovementComponent.h"
+#include "UnrealNetwork.h"
 #include "Components/TextRenderComponent.h"
 
 
@@ -91,6 +92,7 @@ ASUPERFASTCharacter::ASUPERFASTCharacter(const class FObjectInitializer& ObjectI
 	GetCharacterMovement()->JumpZVelocity = 1500.f; //originally: 1000.0 f
 	GetCharacterMovement()->GroundFriction = 2.0f; //originally 3.0 f
 	GetCharacterMovement()->MaxWalkSpeed = 3200.0f; //originally 600 f
+	GetCharacterMovement()->MaxWalkSpeedCrouched = 3200.0f;
 	GetCharacterMovement()->MaxFlySpeed = 600.0f; //originally: 600f
 	GetCharacterMovement()->MaxAcceleration = 1600;
 	GetCharacterMovement()->bCanWalkOffLedges = true;
@@ -101,8 +103,9 @@ ASUPERFASTCharacter::ASUPERFASTCharacter(const class FObjectInitializer& ObjectI
 	GetCharacterMovement()->AirControl = 0.7f;
 	GetCharacterMovement()->AirControlBoostMultiplier = 0.0f;
 	GetCharacterMovement()->FallingLateralFriction = 0.75;
+	
 	GetCharacterMovement()->GetNavAgentPropertiesRef().bCanCrouch = true;
-	GetCharacterMovement()->SetWalkableFloorAngle(70.0f);
+	GetCharacterMovement()->SetWalkableFloorAngle(80.0f);
 
 												  // Lock character motion onto the XZ plane, so the character can't move in or out of the screen
 	GetCharacterMovement()->bConstrainToPlane = true;
@@ -125,12 +128,7 @@ ASUPERFASTCharacter::ASUPERFASTCharacter(const class FObjectInitializer& ObjectI
 
 
 	//JB - everything below this point in the constructor is user created code:
-	acceptsMoveRightCommands = true;
-	isSliding = false;
 	mayDoubleJump = true;
-
-	//0 = not wall sliding, 1 = yes, with wall on right of character, 2 = yes, with wall on left
-	wallSlidingState = 0;
 
 	//JB- TriggerVolumes in the level are currently used to define the space where the player should be able to wallSlide
 	// The main purpose of these volumes is the define where walls VERTICALLY stop being walls.
@@ -152,7 +150,7 @@ bool ASUPERFASTCharacter::CanJumpInternal_Implementation() const
 	UE_LOG(LogTemp, Warning, TEXT("can jump called"));
 	const bool bCanHoldToJumpHigher = (GetJumpMaxHoldTime() > 0.0f) && IsJumpProvidingForce();
 
-	return !bIsCrouched && CharacterMovement && (CharacterMovement->IsMovingOnGround() || mayDoubleJump ||bCanHoldToJumpHigher) && CharacterMovement->IsJumpAllowed() && !CharacterMovement->bWantsToCrouch;
+	return !bIsCrouched && CharacterMovement && (CharacterMovement->IsMovingOnGround() || mayDoubleJump || wallSlideBit != 0 || bCanHoldToJumpHigher) && CharacterMovement->IsJumpAllowed() && !CharacterMovement->bWantsToCrouch;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -167,9 +165,9 @@ void ASUPERFASTCharacter::UpdateAnimation()
 
 	// Are we moving or standing still?
 	UPaperFlipbook* DesiredAnimation;
-	if (wallSlidingState != 0) {
+	if (wallSlideBit != 0) {
 		DesiredAnimation = WallSlideAnimation;
-	} else if (isSliding == true) {
+	} else if (bIsCrouched == true) {
 		DesiredAnimation = SlideAnimation;
 	} else if (GetCharacterMovement()->IsFalling() == true) {
 		DesiredAnimation = (PlayerVelocity.Z < 0) ? FollowThroughJumpAnimation : BeginJumpAnimation;
@@ -219,100 +217,54 @@ void ASUPERFASTCharacter::MoveRight(float Value)
 
 	// Apply the input to the character motion
 
-	//JB- Some player need to lock controller driven lateral motion. acceptsMoveRightCommands allows this to be controlled.
-	// When acceptsMoveRightCommands is false, the player doesn't STOP moving necessarily, it just can't accelerate due to user input.
-	if (acceptsMoveRightCommands && Value != 0) {
+	if (Value != 0 && wallSlideBit == 0 && !bIsCrouched)  {
 		AddMovementInput(FVector(1.0f, 0.0f, 0.0f), Value);
-	}
-	else {
 	}
 }
 
 void ASUPERFASTCharacter::Jump()
 {
-	/*
-	if (wallSlidingState != 0) {
-		int32 d = wallSlidingState;
+	if (wallSlideBit == 1) {
 		stopWallSliding();
-		jumpFromWallSlide(d);
-	} else if (GetCharacterMovement()->IsFalling()) {
-		//UE_LOG(LogTemp, Warning, TEXT("falling"));
-		if (mayDoubleJump == true) {
-			//UE_LOG(LogTemp, Warning, TEXT("may double jump was true"));
+		APaperCharacter::Jump();
 
-			doubleJump();
+	} else if (wallSlideBit == 2) {
+		stopWallSliding();
+		APaperCharacter::Jump();
+
+
+	} else if (GetCharacterMovement()->IsFalling()) {
+		if (mayDoubleJump == true) {
+			APaperCharacter::Jump();
 			mayDoubleJump = false;
 		}
 	} else {
-		//UE_LOG(LogTemp, Warning, TEXT("not falling"));
-	*/
 		APaperCharacter::Jump();
-	/*}*/
-}
-
-void ASUPERFASTCharacter::doubleJump()
-{
-	GetCharacterMovement()->Velocity.Z = GetCharacterMovement()->JumpZVelocity;
-	
-}
-
-void ASUPERFASTCharacter::jumpFromWallSlide(int32 direction)
-{
-	GetCharacterMovement()->Velocity.Z = GetCharacterMovement()->JumpZVelocity;
-	if (direction == 1) {
-		GetCharacterMovement()->Velocity.X = GetCharacterMovement()->JumpZVelocity * -0.7;
 	}
-	else {
-		GetCharacterMovement()->Velocity.X = GetCharacterMovement()->JumpZVelocity * 0.7;
-	}
-
 }
-
 
 void ASUPERFASTCharacter::startSliding()
 {
-	acceptsMoveRightCommands = false;
-	isSliding = true;
-
-	UCharacterMovementComponent *CM = GetCharacterMovement();
-	FVector velocity = CM->Velocity;
-
-	CM->BrakingFrictionFactor = 0.07;
-	CM->bWantsToCrouch = true;
-
-	if (!CM->IsFalling() && velocity.X <= 1000.0 && velocity.GetAbs().X > 0.0)
-	{
-		velocity.X += (velocity.Z > 0) ? 1 : ((velocity.Z < 0) ? -1 : 0) * 1000.0;
-	}
+	Crouch();
 }
 
 void ASUPERFASTCharacter::stopSliding()
 {
-	acceptsMoveRightCommands = true;
-	isSliding = false;
-	
-	GetCharacterMovement()->BrakingFrictionFactor = 2.0;
-	GetCharacterMovement()->bWantsToCrouch = false;
+	UnCrouch();	
 }
 
 void ASUPERFASTCharacter::startWallSliding(int32 direction)
 {
-	if (direction == 1 || direction == 2) {
-		UE_LOG(LogTemp, Log, TEXT("WALLSLIDE!"));
-
-		GetCharacterMovement()->GravityScale = 2;
-		acceptsMoveRightCommands = false;
-		wallSlidingState = direction;
-	}
+	wallSlideBit = direction;
+	GetCharacterMovement()->MaxFlySpeed = direction;
+	GetCharacterMovement()->GravityScale = 2;
 }
 
 void ASUPERFASTCharacter::stopWallSliding()
 {
-	UE_LOG(LogTemp, Log, TEXT("WallSlide ENDED"));
-	//Editor Value should match this
+	wallSlideBit = 0;
+	GetCharacterMovement()->MaxFlySpeed = 0;
 	GetCharacterMovement()->GravityScale = 5;
-	acceptsMoveRightCommands = true;
-	wallSlidingState = 0;
 }
 
 
@@ -369,7 +321,7 @@ void ASUPERFASTCharacter::UpdateCharacter()
 		}
 	}
 }
-
+/*
 void ASUPERFASTCharacter::CheckJumpInput(float DeltaTime)
 {
 	const bool bWasJumping = bPressedJump && JumpKeyHoldTime > 0.0f;
@@ -386,6 +338,7 @@ void ASUPERFASTCharacter::CheckJumpInput(float DeltaTime)
 		}
 	}
 }
+*/
 
 void ASUPERFASTCharacter::OnHit(AActor* SelfActor, AActor* OtherActor, FVector NormalImpulse, const FHitResult& Hit) {
 
@@ -408,10 +361,11 @@ void ASUPERFASTCharacter::OnHit(AActor* SelfActor, AActor* OtherActor, FVector N
 		mayDoubleJump = true;
 	}
 	// Landed on 45 degree slope
-	if (Hit.Normal.GetAbs().Z - 0.707 < 0.01 && Hit.Normal.GetAbs().Z - 0.707 > -0.01) {
+	if (Hit.Normal.GetAbs().Z - 0.707 < 0.03 && Hit.Normal.GetAbs().Z - 0.707 > -0.03) {
 		stopWallSliding();
-		if (!isSliding) {
-
+		GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+		UE_LOG(LogTemp, Log, TEXT("45 degree"));
+		if (!bIsCrouched) {
 			//JB - this is the snippet that transfers falling velocity to lateral motion on slopes. 
 			// Marcel (genius) figured out how to tell when the player wants to transfer his momentum based on his current velocity.
 			// This may or may not be the way we want to permanently implement it. It work is most all cases except using slopes to change direction in hairpin turns.
@@ -427,7 +381,7 @@ void ASUPERFASTCharacter::OnHit(AActor* SelfActor, AActor* OtherActor, FVector N
 
 	// Hit Vertical Wall
 	else if (NormalZ < 0.001 && NormalZ > -0.001 && isInWallSlideVolume && GetCharacterMovement()->IsFalling()) {
-		if (wallSlidingState == 0) {
+		if (wallSlideBit == 0) {
 			GetCharacterMovement()->Velocity.Z += FMath::Sqrt(-FVector::DotProduct(Hit.Normal, GetCapsuleComponent()->ComponentVelocity))*1.5;
 			int32 WallDirection;
 			if (NormalX < 0) {
@@ -443,11 +397,10 @@ void ASUPERFASTCharacter::OnHit(AActor* SelfActor, AActor* OtherActor, FVector N
 
 }
 
-
 void ASUPERFASTCharacter::OnBeginOverlap(AActor* OtherActor)
 {
 	UE_LOG(LogTemp, Warning, TEXT("BEGIN OVERLAP"));
-	if (OtherActor != this) {
+	if (OtherActor != this && OtherActor->ActorHasTag("ws")) {
 		isInWallSlideVolume = true;
 	}
 }
@@ -455,6 +408,16 @@ void ASUPERFASTCharacter::OnBeginOverlap(AActor* OtherActor)
 void ASUPERFASTCharacter::OnEndOverlap(AActor* OtherActor)
 {
 	UE_LOG(LogTemp, Warning, TEXT("End OVERLAP"));
-	isInWallSlideVolume = false;
-	stopWallSliding();
+	if (OtherActor->ActorHasTag("ws")) {
+		isInWallSlideVolume = false;
+		stopWallSliding();
+	}
+}
+
+void ASUPERFASTCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	// Replicate to everyone
+	DOREPLIFETIME(ASUPERFASTCharacter, wallSlideBit);
 }

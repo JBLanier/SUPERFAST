@@ -16,7 +16,6 @@ class SUPERFAST_API USFCharacterMovementComponent : public UCharacterMovementCom
 public:
 
 	enum CustomMovementModes {
-		WallSliding,
 		GrappleSwinging,
 	};
 
@@ -51,7 +50,7 @@ public:
 	* @param NewMovementMode	The new movement mode
 	* @param NewCustomMode		The new custom sub-mode, only applicable if NewMovementMode is Custom.
 	*/
-	virtual void SetMovementMode(EMovementMode NewMovementMode, uint8 NewCustomMode = 0) override;
+	//virtual void SetMovementMode(EMovementMode NewMovementMode, uint8 NewCustomMode = 0) override;
 
 protected:
 
@@ -82,13 +81,13 @@ public:
 	* In general you should set bWantsToCrouch instead to have the crouch persist during movement, or just use the crouch functions on the owning Character.
 	* @param	bClientSimulation	true when called when bIsCrouched is replicated to non owned clients, to update collision cylinder and offset.
 	*/
-	//virtual void Crouch(bool bClientSimulation = false) override;
+	virtual void Crouch(bool bClientSimulation = false) override;
 
 	/**
 	* Checks if default capsule size fits (no encroachment), and trigger OnEndCrouch() on the owner if successful.
 	* @param	bClientSimulation	true when called when bIsCrouched is replicated to non owned clients, to update collision cylinder and offset.
 	*/
-	//virtual void UnCrouch(bool bClientSimulation = false) override;
+	virtual void UnCrouch(bool bClientSimulation = false) override;
 
 
 	/** Handle falling movement. */
