@@ -38,6 +38,8 @@ ASUPERFASTCharacter::ASUPERFASTCharacter(const class FObjectInitializer& ObjectI
 		{
 		}
 	};
+
+
 	static FConstructorStatics ConstructorStatics;
 
 	RunningAnimation = ConstructorStatics.RunningAnimationAsset.Get();
@@ -50,7 +52,7 @@ ASUPERFASTCharacter::ASUPERFASTCharacter(const class FObjectInitializer& ObjectI
 	//JB - this is the end of stuff you need to do create a flipbook reference
 
 	GetSprite()->SetFlipbook(IdleAnimation);
-	GetSprite()->SetRelativeLocation(FVector(0,0,-77));
+	GetSprite()->SetRelativeLocation(FVector(0, 0, -77));
 
 	// Use only Yaw from the controller and ignore the rest of the rotation.
 	bUseControllerRotationPitch = false;
@@ -60,7 +62,7 @@ ASUPERFASTCharacter::ASUPERFASTCharacter(const class FObjectInitializer& ObjectI
 	// Set the size of our collision capsule.
 	GetCapsuleComponent()->SetCapsuleHalfHeight(74.0f);
 	GetCapsuleComponent()->SetCapsuleRadius(40.0f);
-	
+
 
 	// Create a camera boom attached to the root (capsule)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
@@ -103,11 +105,11 @@ ASUPERFASTCharacter::ASUPERFASTCharacter(const class FObjectInitializer& ObjectI
 	GetCharacterMovement()->AirControl = 0.7f;
 	GetCharacterMovement()->AirControlBoostMultiplier = 0.0f;
 	GetCharacterMovement()->FallingLateralFriction = 0.75;
-	
+
 	GetCharacterMovement()->GetNavAgentPropertiesRef().bCanCrouch = true;
 	GetCharacterMovement()->SetWalkableFloorAngle(80.0f);
 
-												  // Lock character motion onto the XZ plane, so the character can't move in or out of the screen
+	// Lock character motion onto the XZ plane, so the character can't move in or out of the screen
 	GetCharacterMovement()->bConstrainToPlane = true;
 	GetCharacterMovement()->SetPlaneConstraintNormal(FVector(0.0f, -1.0f, 0.0f));
 
@@ -142,7 +144,7 @@ ASUPERFASTCharacter::ASUPERFASTCharacter(const class FObjectInitializer& ObjectI
 	this->OnActorHit.AddDynamic(this, &ASUPERFASTCharacter::OnHit);
 	this->OnActorBeginOverlap.AddDynamic(this, &ASUPERFASTCharacter::OnBeginOverlap);
 	this->OnActorEndOverlap.AddDynamic(this, &ASUPERFASTCharacter::OnEndOverlap);
-	
+
 }
 
 bool ASUPERFASTCharacter::CanJumpInternal_Implementation() const
@@ -167,14 +169,17 @@ void ASUPERFASTCharacter::UpdateAnimation()
 	UPaperFlipbook* DesiredAnimation;
 	if (wallSlideBit != 0) {
 		DesiredAnimation = WallSlideAnimation;
-	} else if (bIsCrouched == true) {
+	}
+	else if (bIsCrouched == true) {
 		DesiredAnimation = SlideAnimation;
-	} else if (GetCharacterMovement()->IsFalling() == true) {
+	}
+	else if (GetCharacterMovement()->IsFalling() == true) {
 		DesiredAnimation = (PlayerVelocity.Z < 0) ? FollowThroughJumpAnimation : BeginJumpAnimation;
 	}
 	else if (GetVelocity().X != 0 && GetCharacterMovement()->MovementMode == MOVE_Walking && GetCharacterMovement()->GetCurrentAcceleration().X != 0) {
 		DesiredAnimation = RunningAnimation;
-	} else {
+	}
+	else {
 		DesiredAnimation = IdleAnimation;
 	}
 
@@ -217,7 +222,7 @@ void ASUPERFASTCharacter::MoveRight(float Value)
 
 	// Apply the input to the character motion
 
-	if (Value != 0 && wallSlideBit == 0 && !bIsCrouched)  {
+	if (Value != 0 && wallSlideBit == 0 && !bIsCrouched) {
 		AddMovementInput(FVector(1.0f, 0.0f, 0.0f), Value);
 	}
 }
@@ -228,17 +233,20 @@ void ASUPERFASTCharacter::Jump()
 		stopWallSliding();
 		APaperCharacter::Jump();
 
-	} else if (wallSlideBit == 2) {
+	}
+	else if (wallSlideBit == 2) {
 		stopWallSliding();
 		APaperCharacter::Jump();
 
 
-	} else if (GetCharacterMovement()->IsFalling()) {
+	}
+	else if (GetCharacterMovement()->IsFalling()) {
 		if (mayDoubleJump == true) {
 			APaperCharacter::Jump();
 			mayDoubleJump = false;
 		}
-	} else {
+	}
+	else {
 		APaperCharacter::Jump();
 	}
 }
@@ -250,7 +258,7 @@ void ASUPERFASTCharacter::startSliding()
 
 void ASUPERFASTCharacter::stopSliding()
 {
-	UnCrouch();	
+	UnCrouch();
 }
 
 void ASUPERFASTCharacter::startWallSliding(int32 direction)
@@ -320,33 +328,35 @@ void ASUPERFASTCharacter::UpdateCharacter()
 			Controller->SetControlRotation(FRotator(0.0f, 0.0f, 0.0f));
 		}
 	}
+
+	
 }
 /*
 void ASUPERFASTCharacter::CheckJumpInput(float DeltaTime)
 {
-	const bool bWasJumping = bPressedJump && JumpKeyHoldTime > 0.0f;
-	if (bPressedJump)
-	{
-		// Increment our timer first so calls to IsJumpProvidingForce() will return true
-		JumpKeyHoldTime += DeltaTime;
-		const bool bDidJump = CanJump() &&GetCharacterMovement() &&GetCharacterMovement()->DoJump(bClientUpdating);
-		UE_LOG(LogTemp, Warning, TEXT("1"));
-		if ((!bWasJumping) && bDidJump)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("2"));
-			OnJumped();
-		}
-	}
+const bool bWasJumping = bPressedJump && JumpKeyHoldTime > 0.0f;
+if (bPressedJump)
+{
+// Increment our timer first so calls to IsJumpProvidingForce() will return true
+JumpKeyHoldTime += DeltaTime;
+const bool bDidJump = CanJump() &&GetCharacterMovement() &&GetCharacterMovement()->DoJump(bClientUpdating);
+UE_LOG(LogTemp, Warning, TEXT("1"));
+if ((!bWasJumping) && bDidJump)
+{
+UE_LOG(LogTemp, Warning, TEXT("2"));
+OnJumped();
+}
+}
 }
 */
 
 void ASUPERFASTCharacter::OnHit(AActor* SelfActor, AActor* OtherActor, FVector NormalImpulse, const FHitResult& Hit) {
 
-	
+
 	UE_LOG(LogTemp, Log, TEXT("COLLISION x: %f  y: %f"), Hit.Normal.X, Hit.Normal.Z);
 	//UE_LOG(LogTemp, Warning, TEXT("X Velocity: %f"), GetCapsuleComponent()->ComponentVelocity.X);
 	//UE_LOG(LogTemp, Warning, TEXT("Y Velocity: %f"), GetCapsuleComponent()->ComponentVelocity.Z);
-	
+
 
 	float NormalZ = Hit.Normal.Z;
 	float NormalX = Hit.Normal.X;

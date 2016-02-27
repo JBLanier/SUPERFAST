@@ -83,7 +83,7 @@ protected:
 
 	void UpdateCharacter();
 
-	
+
 	UFUNCTION(/*custom parameters*/)
 		void OnHit(AActor* SelfActor, AActor* OtherActor, FVector NormalImpulse, const FHitResult& Hit);
 
