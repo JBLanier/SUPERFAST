@@ -115,6 +115,9 @@ public:
 	UPROPERTY(Replicated)
 		bool mayDoubleJump;
 
+	UFUNCTION(BlueprintCallable, Category = "Gameplay")
+		void setColor(int playerIndex);
+
 	ASUPERFASTCharacter(const class FObjectInitializer& ObjectInitializer);
 	/** Returns SideViewCameraComponent subobject **/
 	FORCEINLINE class UCameraComponent* GetSideViewCameraComponent() const { return SideViewCameraComponent; }
