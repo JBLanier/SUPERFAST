@@ -3,6 +3,7 @@
 #include "SUPERFAST.h"
 #include "UnrealNetwork.h"
 #include "SFCharacterMovementComponent.h"
+#include "SUPERFASTCharacter.h"
 
 //////////////////////////////////////////////////////////////////////////
 // USFCharacterMovementComponent
@@ -12,20 +13,39 @@
 bool USFCharacterMovementComponent::DoJump(bool bReplayingMoves)
 {
 	GravityScale = 5;
-	if (Super::DoJump(bReplayingMoves)) {
-		if (MaxFlySpeed == 1)
+	UE_LOG(LogTemp, Warning, TEXT("DoJump called"));
+	
+	if (CharacterOwner && CharacterOwner->CanJump())
+	{
+		// Don't jump if we can't move up/down.
+		if (!bConstrainToPlane || FMath::Abs(PlaneConstraintNormal.Z) != 1.f)
 		{
-			Velocity.X = JumpZVelocity * -0.7;
-		}
-		else if (MaxFlySpeed == 2)
-		{
-			UE_LOG(LogTemp, Log, TEXT("ddddddddddddddddddddddddd"));
-			Velocity.X = JumpZVelocity * 0.7;
-		}
-		return true;
-	}
-	return false;
+			Velocity.Z = JumpZVelocity;
+			
+			auto owner = Cast<ASUPERFASTCharacter>(CharacterOwner);
+			if (owner && IsFalling())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("MayDoubleJumpSetTo False"));
+				owner->mayDoubleJump = false;
 
+				if (owner->wallSlideBit == 1)
+				{
+					Velocity.X = JumpZVelocity * -0.7;
+				}
+				else if (owner->wallSlideBit == 2)
+				{
+					Velocity.X = JumpZVelocity * 0.7;
+				}
+				owner->wallSlideBit = 0;
+			}
+
+			SetMovementMode(MOVE_Falling);
+
+			return true;
+		}
+	}
+
+	return false;
 }
 /*
 {

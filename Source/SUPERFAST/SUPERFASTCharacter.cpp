@@ -152,7 +152,11 @@ bool ASUPERFASTCharacter::CanJumpInternal_Implementation() const
 	UE_LOG(LogTemp, Warning, TEXT("can jump called"));
 	const bool bCanHoldToJumpHigher = (GetJumpMaxHoldTime() > 0.0f) && IsJumpProvidingForce();
 
-	return !bIsCrouched && GetCharacterMovement() && (CharacterMovement->IsMovingOnGround() || mayDoubleJump || wallSlideBit != 0 || bCanHoldToJumpHigher) && GetCharacterMovement()->IsJumpAllowed() && !CharacterMovement->bWantsToCrouch;
+	bool returnResult = (!bIsCrouched && GetCharacterMovement() && (CharacterMovement->IsMovingOnGround() || mayDoubleJump || wallSlideBit != 0 || bCanHoldToJumpHigher) && GetCharacterMovement()->IsJumpAllowed() && !CharacterMovement->bWantsToCrouch);
+	
+	UE_LOG(LogTemp, Warning, TEXT("can jump returns %s"), mayDoubleJump ? TEXT("true") : TEXT("false"));
+
+	return returnResult;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -229,25 +233,13 @@ void ASUPERFASTCharacter::MoveRight(float Value)
 
 void ASUPERFASTCharacter::Jump()
 {
-	if (wallSlideBit == 1) {
-		stopWallSliding();
-		APaperCharacter::Jump();
+	Super::Jump();
+}
 
-	}
-	else if (wallSlideBit == 2) {
-		stopWallSliding();
-		APaperCharacter::Jump();
-
-
-	}
-	else if (GetCharacterMovement()->IsFalling()) {
-		if (mayDoubleJump == true) {
-			APaperCharacter::Jump();
-			mayDoubleJump = false;
-		}
-	}
-	else {
-		APaperCharacter::Jump();
+void ASUPERFASTCharacter::OnJumped_Implementation() {
+	if (CharacterMovement->IsFalling())
+	{
+		
 	}
 }
 
@@ -264,14 +256,12 @@ void ASUPERFASTCharacter::stopSliding()
 void ASUPERFASTCharacter::startWallSliding(int32 direction)
 {
 	wallSlideBit = direction;
-	GetCharacterMovement()->MaxFlySpeed = direction;
 	GetCharacterMovement()->GravityScale = 2;
 }
 
 void ASUPERFASTCharacter::stopWallSliding()
 {
 	wallSlideBit = 0;
-	GetCharacterMovement()->MaxFlySpeed = 0;
 	GetCharacterMovement()->GravityScale = 5;
 }
 
@@ -430,4 +420,5 @@ void ASUPERFASTCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 
 	// Replicate to everyone
 	DOREPLIFETIME(ASUPERFASTCharacter, wallSlideBit);
+	DOREPLIFETIME(ASUPERFASTCharacter, mayDoubleJump);
 }

@@ -54,11 +54,10 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
 	class UPaperFlipbook* WallSlideAnimation;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated, Category = Movement)
 		bool isInWallSlideVolume;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
-		bool mayDoubleJump;
+
 
 	/** Called to choose the correct animation to play based on the character's movement state */
 	void UpdateAnimation();
@@ -106,9 +105,15 @@ protected:
 	// End of APawn interface
 
 public:
+
+	void OnJumped_Implementation() override;
+
 	UPROPERTY(Replicated)
 		// 0: not wallsliding 1: wall on left 2: wall on right
 		int8 wallSlideBit;
+
+	UPROPERTY(Replicated)
+		bool mayDoubleJump;
 
 	ASUPERFASTCharacter(const class FObjectInitializer& ObjectInitializer);
 	/** Returns SideViewCameraComponent subobject **/
