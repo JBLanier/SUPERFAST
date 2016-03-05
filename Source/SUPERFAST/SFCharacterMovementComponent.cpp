@@ -13,7 +13,6 @@
 bool USFCharacterMovementComponent::DoJump(bool bReplayingMoves)
 {
 	GravityScale = 5;
-	UE_LOG(LogTemp, Warning, TEXT("DoJump called"));
 	
 	if (CharacterOwner && CharacterOwner->CanJump())
 	{
@@ -25,7 +24,6 @@ bool USFCharacterMovementComponent::DoJump(bool bReplayingMoves)
 			auto owner = Cast<ASUPERFASTCharacter>(CharacterOwner);
 			if (owner && IsFalling())
 			{
-				UE_LOG(LogTemp, Warning, TEXT("MayDoubleJumpSetTo False"));
 				owner->mayDoubleJump = false;
 
 				if (owner->wallSlideBit == 1)

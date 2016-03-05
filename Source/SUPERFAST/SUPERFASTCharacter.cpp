@@ -149,12 +149,9 @@ ASUPERFASTCharacter::ASUPERFASTCharacter(const class FObjectInitializer& ObjectI
 
 bool ASUPERFASTCharacter::CanJumpInternal_Implementation() const
 {
-	UE_LOG(LogTemp, Warning, TEXT("can jump called"));
 	const bool bCanHoldToJumpHigher = (GetJumpMaxHoldTime() > 0.0f) && IsJumpProvidingForce();
 
 	bool returnResult = (!bIsCrouched && GetCharacterMovement() && (CharacterMovement->IsMovingOnGround() || mayDoubleJump || wallSlideBit != 0 || bCanHoldToJumpHigher) && GetCharacterMovement()->IsJumpAllowed() && !CharacterMovement->bWantsToCrouch);
-	
-	UE_LOG(LogTemp, Warning, TEXT("can jump returns %s"), mayDoubleJump ? TEXT("true") : TEXT("false"));
 
 	return returnResult;
 }
@@ -234,13 +231,6 @@ void ASUPERFASTCharacter::MoveRight(float Value)
 void ASUPERFASTCharacter::Jump()
 {
 	Super::Jump();
-}
-
-void ASUPERFASTCharacter::OnJumped_Implementation() {
-	if (CharacterMovement->IsFalling())
-	{
-		
-	}
 }
 
 void ASUPERFASTCharacter::startSliding()

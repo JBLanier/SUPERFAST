@@ -106,10 +106,10 @@ protected:
 
 public:
 
-	void OnJumped_Implementation() override;
-
+	// 0: not wall sliding 
+	// 1: sliding with wall on left 
+	// 2: sliding wall on right
 	UPROPERTY(Replicated)
-		// 0: not wallsliding 1: wall on left 2: wall on right
 		int8 wallSlideBit;
 
 	UPROPERTY(Replicated)
@@ -122,7 +122,4 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 
 	virtual bool CanJumpInternal_Implementation() const override;
-
-	/** Trigger jump if jump button has been pressed. */
-	//virtual void CheckJumpInput(float DeltaTime);
 };

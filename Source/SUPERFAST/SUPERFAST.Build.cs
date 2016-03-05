@@ -9,5 +9,7 @@ public class SUPERFAST : ModuleRules
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "Paper2D", "OnlineSubsystem", "OnlineSubsystemNull", "OnlineSubsystemUtils" });
 
         PrivateDependencyModuleNames.AddRange(new string[] { "OnlineSubsystem" });
+        DynamicallyLoadedModuleNames.Add("OnlineSubsystemSteam");
+
     }
 }
