@@ -13,15 +13,11 @@ DEFINE_LOG_CATEGORY_STATIC(SideScrollerCharacter, Log, All);
 // ASUPERFASTCharacter
 
 
-
 ASUPERFASTCharacter::ASUPERFASTCharacter(const class FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer.SetDefaultSubobjectClass<USFCharacterMovementComponent>(APaperCharacter::CharacterMovementComponentName))
 {
 	// Setup the assets
 	struct FConstructorStatics
 	{
-
-		//JB - If you need to reference a flipbook later in the code, follow the pattern established  here:
-		// (All animations apparently need to be flipbooks, you can't just use sprites for still animations.)
 
 		ConstructorHelpers::FObjectFinderOptional<UPaperFlipbook> RunningAnimationAsset1;
 		ConstructorHelpers::FObjectFinderOptional<UPaperFlipbook> IdleAnimationAsset1;
@@ -52,46 +48,67 @@ ASUPERFASTCharacter::ASUPERFASTCharacter(const class FObjectInitializer& ObjectI
 		ConstructorHelpers::FObjectFinderOptional<UPaperFlipbook> WallSlideAnimationAsset4;
 
 		FConstructorStatics()
-			: RunningAnimationAsset1(TEXT("/Game/SuperFastSprites/1/Run_FlipBook"))
-			, IdleAnimationAsset1(TEXT("/Game/SuperFastSprites/1/Ready_FlipBook"))
-			, BeginJumpAnimationAsset1(TEXT("/Game/SuperFastSprites/1/Jump_1_FlipBook"))
-			, FollowThroughJumpAnimationAsset1(TEXT("/Game/SuperFastSprites/1/Jump_2_Flipbook"))
-			, SlideAnimationAsset1(TEXT("/Game/SuperFastSprites/1/Slide_FlipBook"))
-			, WallSlideAnimationAsset1(TEXT("/Game/SuperFastSprites/1/WallSlide_FlipBook"))
+			: RunningAnimationAsset1(TEXT("/Game/SuperFastSprites/1/1Run_FlipBook"))
+			, IdleAnimationAsset1(TEXT("/Game/SuperFastSprites/1/1Ready_FlipBook"))
+			, BeginJumpAnimationAsset1(TEXT("/Game/SuperFastSprites/1/1Jump_1_FlipBook"))
+			, FollowThroughJumpAnimationAsset1(TEXT("/Game/SuperFastSprites/1/1Jump_2_Flipbook"))
+			, SlideAnimationAsset1(TEXT("/Game/SuperFastSprites/1/1Slide_FlipBook"))
+			, WallSlideAnimationAsset1(TEXT("/Game/SuperFastSprites/1/1WallSlide_FlipBook"))
 
-			, RunningAnimationAsset2(TEXT("/Game/SuperFastSprites/2/Run_FlipBook"))
-			, IdleAnimationAsset2(TEXT("/Game/SuperFastSprites/2/Ready_FlipBook"))
-			, BeginJumpAnimationAsset2(TEXT("/Game/SuperFastSprites/2/Jump_1_FlipBook"))
-			, FollowThroughJumpAnimationAsset2(TEXT("/Game/SuperFastSprites/2/Jump_2_Flipbook"))
-			, SlideAnimationAsset2(TEXT("/Game/SuperFastSprites/2/Slide_FlipBook"))
-			, WallSlideAnimationAsset2(TEXT("/Game/SuperFastSprites/2/WallSlide_FlipBook"))
+			, RunningAnimationAsset2(TEXT("/Game/SuperFastSprites/2/2Run_FlipBook"))
+			, IdleAnimationAsset2(TEXT("/Game/SuperFastSprites/2/2Ready_FlipBook"))
+			, BeginJumpAnimationAsset2(TEXT("/Game/SuperFastSprites/2/2Jump_1_FlipBook"))
+			, FollowThroughJumpAnimationAsset2(TEXT("/Game/SuperFastSprites/2/2Jump_2_Flipbook"))
+			, SlideAnimationAsset2(TEXT("/Game/SuperFastSprites/2/2Slide_FlipBook"))
+			, WallSlideAnimationAsset2(TEXT("/Game/SuperFastSprites/2/2WallSlide_FlipBook"))
 
-			, RunningAnimationAsset3(TEXT("/Game/SuperFastSprites/3/Run_FlipBook"))
-			, IdleAnimationAsset3(TEXT("/Game/SuperFastSprites/3/Ready_FlipBook"))
-			, BeginJumpAnimationAsset3(TEXT("/Game/SuperFastSprites/3/Jump_1_FlipBook"))
-			, FollowThroughJumpAnimationAsset3(TEXT("/Game/SuperFastSprites/3/Jump_2_Flipbook"))
-			, SlideAnimationAsset3(TEXT("/Game/SuperFastSprites/3/Slide_FlipBook"))
-			, WallSlideAnimationAsset3(TEXT("/Game/SuperFastSprites/3/WallSlide_FlipBook"))
+			, RunningAnimationAsset3(TEXT("/Game/SuperFastSprites/3/3Run_FlipBook"))
+			, IdleAnimationAsset3(TEXT("/Game/SuperFastSprites/3/3Ready_FlipBook"))
+			, BeginJumpAnimationAsset3(TEXT("/Game/SuperFastSprites/3/3Jump_1_FlipBook"))
+			, FollowThroughJumpAnimationAsset3(TEXT("/Game/SuperFastSprites/3/3Jump_2_Flipbook"))
+			, SlideAnimationAsset3(TEXT("/Game/SuperFastSprites/3/3Slide_FlipBook"))
+			, WallSlideAnimationAsset3(TEXT("/Game/SuperFastSprites/3/3WallSlide_FlipBook"))
 
-			, RunningAnimationAsset4(TEXT("/Game/SuperFastSprites/4/Run_FlipBook"))
-			, IdleAnimationAsset4(TEXT("/Game/SuperFastSprites/4/Ready_FlipBook"))
-			, BeginJumpAnimationAsset4(TEXT("/Game/SuperFastSprites/4/Jump_1_FlipBook"))
-			, FollowThroughJumpAnimationAsset4(TEXT("/Game/SuperFastSprites/4/Jump_2_Flipbook"))
-			, SlideAnimationAsset4(TEXT("/Game/SuperFastSprites/4/Slide_FlipBook"))
-			, WallSlideAnimationAsset4(TEXT("/Game/SuperFastSprites/4/WallSlide_FlipBook"))
+			, RunningAnimationAsset4(TEXT("/Game/SuperFastSprites/4/4Run_FlipBook"))
+			, IdleAnimationAsset4(TEXT("/Game/SuperFastSprites/4/4Ready_FlipBook"))
+			, BeginJumpAnimationAsset4(TEXT("/Game/SuperFastSprites/4/4Jump_1_FlipBook"))
+			, FollowThroughJumpAnimationAsset4(TEXT("/Game/SuperFastSprites/4/4Jump_2_Flipbook"))
+			, SlideAnimationAsset4(TEXT("/Game/SuperFastSprites/4/4Slide_FlipBook"))
+			, WallSlideAnimationAsset4(TEXT("/Game/SuperFastSprites/4/4WallSlide_FlipBook"))
+
 		{
 		}
 	};
 
-
 	static FConstructorStatics ConstructorStatics;
 
-	RunningAnimation = ConstructorStatics.RunningAnimationAsset1.Get();
-	IdleAnimation = ConstructorStatics.IdleAnimationAsset1.Get();
-	BeginJumpAnimation = ConstructorStatics.BeginJumpAnimationAsset1.Get();
-	FollowThroughJumpAnimation = ConstructorStatics.FollowThroughJumpAnimationAsset1.Get();
-	SlideAnimation = ConstructorStatics.SlideAnimationAsset1.Get();
-	WallSlideAnimation = ConstructorStatics.WallSlideAnimationAsset1.Get();
+	RunningAnim1 = ConstructorStatics.RunningAnimationAsset1.Get();
+	IdleAnim1 = ConstructorStatics.IdleAnimationAsset1.Get();
+	BeginJumpAnim1 = ConstructorStatics.BeginJumpAnimationAsset1.Get();
+	FollowThroughJumpAnim1 = ConstructorStatics.FollowThroughJumpAnimationAsset1.Get();
+	SlideAnim1 = ConstructorStatics.SlideAnimationAsset1.Get();
+	WallSlideAnim1 = ConstructorStatics.WallSlideAnimationAsset1.Get();
+
+	RunningAnim2 = ConstructorStatics.RunningAnimationAsset2.Get();
+	IdleAnim2 = ConstructorStatics.IdleAnimationAsset2.Get();
+	BeginJumpAnim2 = ConstructorStatics.BeginJumpAnimationAsset2.Get();
+	FollowThroughJumpAnim2 = ConstructorStatics.FollowThroughJumpAnimationAsset2.Get();
+	SlideAnim2 = ConstructorStatics.SlideAnimationAsset2.Get();
+	WallSlideAnim2 = ConstructorStatics.WallSlideAnimationAsset2.Get();
+
+	RunningAnim3 = ConstructorStatics.RunningAnimationAsset3.Get();
+	IdleAnim3 = ConstructorStatics.IdleAnimationAsset3.Get();
+	BeginJumpAnim3 = ConstructorStatics.BeginJumpAnimationAsset3.Get();
+	FollowThroughJumpAnim3 = ConstructorStatics.FollowThroughJumpAnimationAsset3.Get();
+	SlideAnim3 = ConstructorStatics.SlideAnimationAsset3.Get();
+	WallSlideAnim3 = ConstructorStatics.WallSlideAnimationAsset3.Get();
+	
+	RunningAnim4 = ConstructorStatics.RunningAnimationAsset4.Get();	
+	IdleAnim4 = ConstructorStatics.IdleAnimationAsset4.Get();
+	BeginJumpAnim4 = ConstructorStatics.BeginJumpAnimationAsset4.Get();
+	FollowThroughJumpAnim4 = ConstructorStatics.FollowThroughJumpAnimationAsset4.Get();
+	SlideAnim4 = ConstructorStatics.SlideAnimationAsset4.Get();
+	WallSlideAnim4 = ConstructorStatics.WallSlideAnimationAsset4.Get();
 
 	//JB - this is the end of stuff you need to do create a flipbook reference
 
@@ -191,11 +208,6 @@ ASUPERFASTCharacter::ASUPERFASTCharacter(const class FObjectInitializer& ObjectI
 
 }
 
-void ASUPERFASTCharacter::setColor(int playerIndex)
-{
-	
-}
-
 bool ASUPERFASTCharacter::CanJumpInternal_Implementation() const
 {
 	const bool bCanHoldToJumpHigher = (GetJumpMaxHoldTime() > 0.0f) && IsJumpProvidingForce();
@@ -203,6 +215,53 @@ bool ASUPERFASTCharacter::CanJumpInternal_Implementation() const
 	bool returnResult = (!bIsCrouched && GetCharacterMovement() && (CharacterMovement->IsMovingOnGround() || mayDoubleJump || wallSlideBit != 0 || bCanHoldToJumpHigher) && GetCharacterMovement()->IsJumpAllowed() && !CharacterMovement->bWantsToCrouch);
 
 	return returnResult;
+}
+
+void ASUPERFASTCharacter::setUpAnimations(int32 playerIndex)
+{
+
+	switch (playerIndex % 4)
+	{
+		case 0:
+			RunningAnimation = RunningAnim1;
+			IdleAnimation = IdleAnim1;
+			BeginJumpAnimation = BeginJumpAnim1;
+			FollowThroughJumpAnimation = FollowThroughJumpAnim1;
+			SlideAnimation = SlideAnim1;
+			WallSlideAnimation = WallSlideAnim1;
+			break;
+
+		case 1:
+			RunningAnimation = RunningAnim2;
+			IdleAnimation = IdleAnim2;
+			BeginJumpAnimation = BeginJumpAnim2;
+			FollowThroughJumpAnimation = FollowThroughJumpAnim2;
+			SlideAnimation = SlideAnim2;
+			WallSlideAnimation = WallSlideAnim2;
+			break;
+		
+		case 2:
+			RunningAnimation = RunningAnim3;
+			IdleAnimation = IdleAnim3;
+			BeginJumpAnimation = BeginJumpAnim3;
+			FollowThroughJumpAnimation = FollowThroughJumpAnim3;
+			SlideAnimation = SlideAnim3;
+			WallSlideAnimation = WallSlideAnim3;
+			break;
+
+		case 3:
+			RunningAnimation = RunningAnim4;
+			IdleAnimation = IdleAnim4;
+			BeginJumpAnimation = BeginJumpAnim4;
+			FollowThroughJumpAnimation = FollowThroughJumpAnim4;
+			SlideAnimation = SlideAnim4;
+			WallSlideAnimation = WallSlideAnim4;
+			break;
+
+		default:
+			break;
+	}
+
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -460,4 +519,10 @@ void ASUPERFASTCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 	// Replicate to everyone
 	DOREPLIFETIME(ASUPERFASTCharacter, wallSlideBit);
 	DOREPLIFETIME(ASUPERFASTCharacter, mayDoubleJump);
+	DOREPLIFETIME(ASUPERFASTCharacter, IdleAnimation);
+	DOREPLIFETIME(ASUPERFASTCharacter, RunningAnimation);
+	DOREPLIFETIME(ASUPERFASTCharacter, BeginJumpAnimation);
+	DOREPLIFETIME(ASUPERFASTCharacter, FollowThroughJumpAnimation);
+	DOREPLIFETIME(ASUPERFASTCharacter, SlideAnimation);
+	DOREPLIFETIME(ASUPERFASTCharacter, WallSlideAnimation);
 }
