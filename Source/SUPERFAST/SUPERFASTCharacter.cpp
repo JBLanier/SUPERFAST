@@ -333,6 +333,8 @@ void ASUPERFASTCharacter::MoveRight(float Value)
 
 	if (Value != 0 && wallSlideBit == 0 && !bIsCrouched) {
 		AddMovementInput(FVector(1.0f, 0.0f, 0.0f), Value);
+	} else if (bIsCrouched) {
+		AddMovementInput(FVector(1.0f, 0.0f, 0.0f), Value*0.3);
 	}
 }
 
