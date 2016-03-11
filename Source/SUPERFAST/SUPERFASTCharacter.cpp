@@ -316,9 +316,6 @@ void ASUPERFASTCharacter::SetupPlayerInputComponent(class UInputComponent* Input
 	InputComponent->BindAction("Jump", IE_Released, this, &ASUPERFASTCharacter::StopJumping);
 	InputComponent->BindAction("Slide", IE_Pressed, this, &ASUPERFASTCharacter::startSliding);
 	InputComponent->BindAction("Slide", IE_Released, this, &ASUPERFASTCharacter::stopSliding);
-	InputComponent->BindAction("Grapple", IE_Pressed, this, &ASUPERFASTCharacter::startGrappling);
-	InputComponent->BindAction("Grapple", IE_Released, this, &ASUPERFASTCharacter::stopGrappling);
-	InputComponent->BindAction("UseItem", IE_Released, this, &ASUPERFASTCharacter::useItem);
 	InputComponent->BindAxis("MoveRight", this, &ASUPERFASTCharacter::MoveRight);
 
 	InputComponent->BindTouch(IE_Pressed, this, &ASUPERFASTCharacter::TouchStarted);
@@ -365,25 +362,6 @@ void ASUPERFASTCharacter::stopWallSliding()
 	GetCharacterMovement()->GravityScale = 5;
 }
 
-
-//JB- In theory, Stop*doingsomething*() functions should be able to called without adverse effects at anytime regardless of whether or not the player is actually *doingthething*
-// That way functions can have logic like "I dunno if he's grappling right now, but he definitely shouldn't be currently, lets call stopGrappling and the player will stop if he is."
-void ASUPERFASTCharacter::startGrappling()
-{
-}
-
-void ASUPERFASTCharacter::stopGrappling()
-{
-
-}
-
-void ASUPERFASTCharacter::useItem()
-{
-
-}
-
-
-
 void ASUPERFASTCharacter::TouchStarted(const ETouchIndex::Type FingerIndex, const FVector Location)
 {
 	// jump on any touch
@@ -421,24 +399,6 @@ void ASUPERFASTCharacter::UpdateCharacter()
 
 	
 }
-/*
-void ASUPERFASTCharacter::CheckJumpInput(float DeltaTime)
-{
-const bool bWasJumping = bPressedJump && JumpKeyHoldTime > 0.0f;
-if (bPressedJump)
-{
-// Increment our timer first so calls to IsJumpProvidingForce() will return true
-JumpKeyHoldTime += DeltaTime;
-const bool bDidJump = CanJump() &&GetCharacterMovement() &&GetCharacterMovement()->DoJump(bClientUpdating);
-UE_LOG(LogTemp, Warning, TEXT("1"));
-if ((!bWasJumping) && bDidJump)
-{
-UE_LOG(LogTemp, Warning, TEXT("2"));
-OnJumped();
-}
-}
-}
-*/
 
 void ASUPERFASTCharacter::OnHit(AActor* SelfActor, AActor* OtherActor, FVector NormalImpulse, const FHitResult& Hit) {
 
